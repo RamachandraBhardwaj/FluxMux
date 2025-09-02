@@ -1,0 +1,33 @@
+[
+  {
+    "id": 1001,
+    "user": {
+      "name": "Alice",
+      "age": 30,
+      "address": {
+        "city": "Bangalore",
+        "zip": "560001"
+      }
+    },
+    "orders": [
+      { "order_id": "A1", "amount": 250.75, "status": "shipped" },
+      { "order_id": "A2", "amount": 89.99, "status": "pending" }
+    ],
+    "active": true
+  },
+  {
+    "id": 1002,
+    "user": {
+      "name": "Bob",
+      "age": 25,
+      "address": {
+        "city": "Hyderabad",
+        "zip": "500001"
+      }
+    },
+    "orders": [
+      { "order_id": "B1", "amount": 120.00, "status": "delivered" }
+    ],
+    "active": false
+  }
+]

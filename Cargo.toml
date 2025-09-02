@@ -1,0 +1,19 @@
+[package]
+name = "fluxmux"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+
+[workspace]
+members = [
+    "crates/fluxmux-core",
+    "crates/fluxmux-cli",
+    "crates/fluxmux-connectors",
+    "crates/fluxmux-codecs",
+    "crates/fluxmux-ui",
+    "crates/fluxmux-sinks",
+    "crates/fluxmux-plugins",
+    "examples/convert",
+    "examples/bridge", 
+]
