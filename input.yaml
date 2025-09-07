@@ -1,0 +1,6 @@
+- id: 1
+  name: FluxMux
+  version: 0.1.0
+- id: 2
+  name: Rust
+  version: 1.81.0

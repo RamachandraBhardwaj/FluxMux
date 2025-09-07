@@ -4,6 +4,10 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+avro-rs = "0.13.0"
+parquet = "56.1.0"
+rmp-serde = "1.3.0"
+serde_cbor = "0.11.2"
 
 [workspace]
 members = [

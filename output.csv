@@ -1,3 +1,3 @@
-active,id,orders.0.amount,orders.0.order_id,orders.0.status,orders.1.amount,orders.1.order_id,orders.1.status,user.address.city,user.address.zip,user.age,user.name
-true,1001,250.75,"""A1""","""shipped""",89.99,"""A2""","""pending""","""Bangalore""","""560001""",30,"""Alice"""
-false,1002,120.0,"""B1""","""delivered""",,,,"""Hyderabad""","""500001""",25,"""Bob"""
+active,id,orders,user
+true,1001,"[{""amount"":250.75,""order_id"":""A1"",""status"":""shipped""},{""amount"":89.99,""order_id"":""A2"",""status"":""pending""}]","{""address"":{""city"":""Bangalore"",""zip"":""560001""},""age"":30,""name"":""Alice""}"
+false,1002,"[{""amount"":120.0,""order_id"":""B1"",""status"":""delivered""}]","{""address"":{""city"":""Hyderabad"",""zip"":""500001""},""age"":25,""name"":""Bob""}"
