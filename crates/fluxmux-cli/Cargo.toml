@@ -5,6 +5,8 @@ edition = "2021"
 
 [dependencies]
 fluxmux-core = { path = "../fluxmux-core" }
+fluxmux-connectors = { path = "../fluxmux-connectors" }
+fluxmux-sinks = { path = "../fluxmux-sinks" }
 clap = { version = "4.5", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1", features = ["derive"] }
@@ -12,7 +14,11 @@ serde_json = "1"
 serde_yaml = "0.9"
 csv = "1"
 anyhow = "1"
+url = "2.5"
 toml = "0.8"
+# Kafka
+rdkafka = { version = "0.36", features = ["tokio", "cmake-build"] }
+futures = "0.3"
 # Parquet
 parquet = "*"
 arrow = "*"

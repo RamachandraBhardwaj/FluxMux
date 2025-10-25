@@ -22,3 +22,16 @@ pub trait Codec: Send + Sync {
     async fn decode(&self, payload: &[u8]) -> anyhow::Result<serde_json::Value>;
     async fn encode(&self, v: &serde_json::Value) -> anyhow::Result<Vec<u8>>;
 }
+
+
+#[derive(Debug, Clone)]
+pub struct SourceConfig {
+    pub uri: String, // e.g., "kafka://topic", "mqtt://broker/topic"
+    // Add protocol-specific fields as needed
+}
+
+#[derive(Debug, Clone)]
+pub struct SinkConfig {
+    pub uri: String, // e.g., "file://output.json", "sqlite://db.sqlite"
+    // Add protocol-specific fields as needed
+}

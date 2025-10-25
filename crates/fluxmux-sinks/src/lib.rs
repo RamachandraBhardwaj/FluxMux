@@ -1,14 +1,9 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+pub mod file;
+pub mod kafka;
+pub mod postgres;
+pub mod pipe;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub use file::FileSink;
+pub use kafka::KafkaSink;
+pub use postgres::PostgresSink;
+pub use pipe::PipeSink;

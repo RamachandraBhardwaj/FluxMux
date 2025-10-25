@@ -36,7 +36,6 @@ pub enum Format {
     MsgPack,
     Cbor,
     Ndjson,
-    // Later: Parquet, Avro, MsgPack, CBOR...
 }
 
 impl Format {
