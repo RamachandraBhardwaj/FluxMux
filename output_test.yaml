@@ -1,0 +1,27 @@
+- active: true
+  id: 1001
+  orders:
+  - amount: 250.75
+    order_id: A1
+    status: shipped
+  - amount: 89.99
+    order_id: A2
+    status: pending
+  user:
+    address:
+      city: Bangalore
+      zip: '560001'
+    age: 30
+    name: Alice
+- active: false
+  id: 1002
+  orders:
+  - amount: 120.0
+    order_id: B1
+    status: delivered
+  user:
+    address:
+      city: Hyderabad
+      zip: '500001'
+    age: 25
+    name: Bob
