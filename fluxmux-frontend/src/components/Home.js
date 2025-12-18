@@ -24,12 +24,12 @@ function Home() {
       description: 'Unix-style pipelines with transformation actions',
       path: '/pipe'
     },
-    {
-      icon: <FaServer className="feature-icon" style={{ color: '#764ba2' }} />,
-      title: 'Kafka',
-      description: 'Fast, real-time Kafka topic inspection',
-      path: '/kafka'
-    }
+    // {
+    //   icon: <FaServer className="feature-icon" style={{ color: '#764ba2' }} />,
+    //   title: 'Kafka',
+    //   description: 'Fast, real-time Kafka topic inspection',
+    //   path: '/kafka'
+    // }
   ];
 
   return (
