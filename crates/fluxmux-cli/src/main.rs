@@ -8,6 +8,7 @@ use std::str::FromStr;
 mod conversions;
 mod endpoints;
 mod kafka_inspector;
+mod interactive;
 
 use clap::{Parser, Subcommand};
 use conversions::{Format, convert};
@@ -19,7 +20,7 @@ use fluxmux_sinks::{FileSink, KafkaSink, PostgresSink, PipeSink};
 #[command(name = "fluxmux", about = "Universal CLI for File Conversion & Stream Inspection")]
 pub struct Cli {
     #[command(subcommand)]
-    pub command: Commands,
+    pub command: Option<Commands>,
     #[arg(long)]
     pub batch_size: Option<usize>,
     #[arg(long)]
@@ -92,6 +93,23 @@ pub enum Commands {
 async fn main() {
     let cli = Cli::parse();
 
+    // If no command provided, start interactive mode
+    if cli.command.is_none() {
+        if let Err(e) = interactive::run_interactive().await {
+            eprintln!("{}", interactive::error(&format!("Error: {}", e)));
+            std::process::exit(1);
+        }
+        return;
+    }
+
+    // CLI mode: execute command and exit
+    if let Err(e) = execute_cli_command(&cli).await {
+        eprintln!("{}", interactive::error(&e));
+        std::process::exit(1);
+    }
+}
+
+async fn execute_cli_command(cli: &Cli) -> Result<(), String> {
     // Helper: merge config from CLI and YAML for Bridge
     fn load_middleware_config_bridge(
         batch_size: Option<usize>,
@@ -142,7 +160,7 @@ async fn main() {
     }
 
     match &cli.command {
-        Commands::Convert { input, output, from, to } => {
+        Some(Commands::Convert { input, output, from, to }) => {
             let from_fmt = Format::from_ext(&from).unwrap_or_else(|| {
                 eprintln!("Unsupported input format: {from}");
                 std::process::exit(1);
@@ -157,8 +175,9 @@ async fn main() {
             } else {
                 println!("✓ Converted {input} ({from}) → {output} ({to})");
             }
+            Ok(())
         }
-        Commands::Bridge {
+        Some(Commands::Bridge {
             source,
             sink,
             batch_size,
@@ -169,7 +188,7 @@ async fn main() {
             retry_delay_ms,
             schema_path,
             config,
-        } => {
+        }) => {
             let mw_config = load_middleware_config_bridge(
                 *batch_size,
                 *batch_timeout_ms,
@@ -242,8 +261,9 @@ async fn main() {
                 std::process::exit(1);
             }
             println!("✓ Bridge completed successfully");
+            Ok(())
         }
-        Commands::Pipe { source, args } => {
+        Some(Commands::Pipe { source, args }) => {
             // Parse source
             let source_type = match SourceType::from_str(source) {
                 Ok(st) => st,
@@ -271,8 +291,9 @@ async fn main() {
                 std::process::exit(1);
             }
             println!("✓ Pipe completed successfully");
+            Ok(())
         }
-        Commands::Kafka { topic, broker, group, head, tail } => {
+        Some(Commands::Kafka { topic, broker, group, head, tail }) => {
             if head.is_none() && tail.is_none() {
                 eprintln!("Error: Either --head or --tail must be specified");
                 std::process::exit(1);
@@ -289,7 +310,9 @@ async fn main() {
                     std::process::exit(1);
                 }
             }
+            Ok(())
         }
+        None => Ok(()), // Should not reach here due to interactive mode check
     }
 }
 

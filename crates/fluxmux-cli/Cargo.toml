@@ -29,3 +29,6 @@ rmp-serde = "*"
 # CBOR
 serde_cbor = "*"
 hex = "*"
+rustyline = "13.0"        # Readline with history
+colored = "2.0"           # Colored terminal output
+dirs = "5.0"              # Cross-platform home directory

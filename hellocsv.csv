@@ -1,0 +1,3 @@
+active,id,orders,user
+true,1001,"[{""amount"":250.75,""order_id"":""A1"",""status"":""shipped""},{""amount"":89.99,""order_id"":""A2"",""status"":""pending""}]","{""address"":{""city"":""Bangalore"",""zip"":""560001""},""age"":30,""name"":""Alice""}"
+false,1002,"[{""amount"":120.0,""order_id"":""B1"",""status"":""delivered""}]","{""address"":{""city"":""Hyderabad"",""zip"":""500001""},""age"":25,""name"":""Bob""}"
