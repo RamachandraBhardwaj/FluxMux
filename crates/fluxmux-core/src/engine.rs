@@ -59,7 +59,7 @@ pub async fn run_pipeline(
 
     let source_handle = tokio::spawn(async move {
         if let Err(e) = source.start(tx).await {
-            eprintln!("Source stopped with error: {:?}", e);
+            eprintln!("[DEBUG] Source stopped with error: {:?}", e);
         }
     });
 

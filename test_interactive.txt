@@ -1,0 +1,5 @@
+help
+help convert
+status
+stats
+quit
