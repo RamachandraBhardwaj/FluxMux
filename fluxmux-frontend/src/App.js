@@ -29,9 +29,9 @@ function App() {
               <li className="nav-item">
                 <Link to="/pipe" className="nav-link">Pipe</Link>
               </li>
-              <li className="nav-item">
+              {/* <li className="nav-item">
                 <Link to="/kafka" className="nav-link">Kafka</Link>
-              </li>
+              </li> */}
             </ul>
           </div>
         </nav>
@@ -42,7 +42,7 @@ function App() {
             <Route path="/convert" element={<Convert />} />
             <Route path="/bridge" element={<Bridge />} />
             <Route path="/pipe" element={<Pipe />} />
-            <Route path="/kafka" element={<Kafka />} />
+            {/* <Route path="/kafka" element={<Kafka />} /> */}
           </Routes>
         </div>
       </div>

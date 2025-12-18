@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { FaLink } from 'react-icons/fa';
+import { FaLink, FaUpload } from 'react-icons/fa';
 
 function Bridge() {
   const [config, setConfig] = useState({
-    source: 'file:input.json',
-    sink: 'kafka://localhost:9092/topic',
+    sink: 'kafka://localhost:9092/vasudeva',
     batchSize: '',
     batchTimeoutMs: '',
     deduplicate: false,
-    throttlePerSec: '',
+    throttleRate: '',
     retryMaxAttempts: '',
-    retryDelayMs: '',
-    schemaPath: ''
+    retryDelayMs: ''
   });
+  const [sourceFile, setSourceFile] = useState(null);
+  const [schemaFile, setSchemaFile] = useState(null);
   const [output, setOutput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -23,12 +23,37 @@ function Bridge() {
   };
 
   const handleRun = async () => {
+    if (!sourceFile) {
+      setError('Please select a source file');
+      return;
+    }
+    if (!config.sink) {
+      setError('Sink is required');
+      return;
+    }
+
     setLoading(true);
     setError('');
     setOutput('');
 
     try {
-      const response = await axios.post('http://localhost:3001/api/bridge', config);
+      const formData = new FormData();
+      formData.append('sourceFile', sourceFile);
+      formData.append('sink', config.sink);
+      formData.append('deduplicate', config.deduplicate);
+
+      if (config.batchSize) formData.append('batchSize', config.batchSize);
+      if (config.batchTimeoutMs) formData.append('batchTimeoutMs', config.batchTimeoutMs);
+      if (config.throttleRate) formData.append('throttleRate', config.throttleRate);
+      if (config.retryMaxAttempts) formData.append('retryMaxAttempts', config.retryMaxAttempts);
+      if (config.retryDelayMs) formData.append('retryDelayMs', config.retryDelayMs);
+      if (schemaFile) formData.append('schemaFile', schemaFile);
+
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/bridge`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       setOutput(response.data.output);
     } catch (err) {
       setError(err.response?.data?.error || 'Bridge operation failed');
@@ -49,17 +74,19 @@ function Bridge() {
 
       <div className="grid grid-2">
         <div className="form-group">
-          <label className="form-label">Source</label>
+          <label className="form-label">Source File</label>
           <input
-            type="text"
+            type="file"
             className="form-input"
-            value={config.source}
-            onChange={(e) => handleChange('source', e.target.value)}
-            placeholder="file:input.json | kafka://host:port/topic?group=id | stdin"
+            accept=".json,.csv,.txt"
+            onChange={(e) => setSourceFile(e.target.files[0])}
           />
-          <small style={{ color: '#666', fontSize: '0.85rem' }}>
-            Examples: file:input.json, kafka://localhost:9092/topic?group=mygroup, stdin
-          </small>
+          {sourceFile && (
+            <small style={{ color: '#4CAF50', fontSize: '0.85rem', marginTop: '0.5rem', display: 'block' }}>
+              <FaUpload style={{ marginRight: '0.25rem' }} />
+              Selected: {sourceFile.name}
+            </small>
+          )}
         </div>
 
         <div className="form-group">
@@ -69,10 +96,10 @@ function Bridge() {
             className="form-input"
             value={config.sink}
             onChange={(e) => handleChange('sink', e.target.value)}
-            placeholder="file:output.json | kafka://host:port/topic | stdout"
+            placeholder="kafka://host:port/topic | stdout"
           />
           <small style={{ color: '#666', fontSize: '0.85rem' }}>
-            Examples: file:output.json, kafka://localhost:9092/topic, postgres://localhost:5432/db?table=events
+            Examples: kafka://localhost:9092/vasudeva, stdout
           </small>
         </div>
       </div>
@@ -83,67 +110,81 @@ function Bridge() {
         <div className="form-group">
           <label className="form-label">Batch Size</label>
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
             className="form-input"
             value={config.batchSize}
-            onChange={(e) => handleChange('batchSize', e.target.value)}
+            onChange={(e) => handleChange('batchSize', e.target.value.replace(/[^0-9]/g, ''))}
             placeholder="e.g., 10"
+            autoComplete="off"
           />
         </div>
 
         <div className="form-group">
           <label className="form-label">Batch Timeout (ms)</label>
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
             className="form-input"
             value={config.batchTimeoutMs}
-            onChange={(e) => handleChange('batchTimeoutMs', e.target.value)}
+            onChange={(e) => handleChange('batchTimeoutMs', e.target.value.replace(/[^0-9]/g, ''))}
             placeholder="e.g., 1000"
+            autoComplete="off"
           />
         </div>
 
         <div className="form-group">
-          <label className="form-label">Throttle (per sec)</label>
+          <label className="form-label">Throttle Rate</label>
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
             className="form-input"
-            value={config.throttlePerSec}
-            onChange={(e) => handleChange('throttlePerSec', e.target.value)}
-            placeholder="e.g., 100"
+            value={config.throttleRate}
+            onChange={(e) => handleChange('throttleRate', e.target.value.replace(/[^0-9]/g, ''))}
+            placeholder="e.g., 10"
+            autoComplete="off"
           />
         </div>
 
         <div className="form-group">
           <label className="form-label">Retry Max Attempts</label>
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
             className="form-input"
             value={config.retryMaxAttempts}
-            onChange={(e) => handleChange('retryMaxAttempts', e.target.value)}
+            onChange={(e) => handleChange('retryMaxAttempts', e.target.value.replace(/[^0-9]/g, ''))}
             placeholder="e.g., 3"
+            autoComplete="off"
           />
         </div>
 
         <div className="form-group">
           <label className="form-label">Retry Delay (ms)</label>
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
             className="form-input"
             value={config.retryDelayMs}
-            onChange={(e) => handleChange('retryDelayMs', e.target.value)}
+            onChange={(e) => handleChange('retryDelayMs', e.target.value.replace(/[^0-9]/g, ''))}
             placeholder="e.g., 1000"
+            autoComplete="off"
           />
         </div>
 
         <div className="form-group">
-          <label className="form-label">Schema Path</label>
+          <label className="form-label">Schema File (optional)</label>
           <input
-            type="text"
+            type="file"
             className="form-input"
-            value={config.schemaPath}
-            onChange={(e) => handleChange('schemaPath', e.target.value)}
-            placeholder="schema.json"
+            accept=".json"
+            onChange={(e) => setSchemaFile(e.target.files[0])}
           />
+          {schemaFile && (
+            <small style={{ color: '#4CAF50', fontSize: '0.85rem' }}>
+              {schemaFile.name}
+            </small>
+          )}
         </div>
       </div>
 

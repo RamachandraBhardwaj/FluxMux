@@ -31,7 +31,7 @@ function Kafka() {
     setMessages([]);
 
     try {
-      const response = await axios.post('http://localhost:3001/api/kafka', config);
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/kafka`, config);
       setMessages(response.data.messages || []);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to fetch Kafka messages');
@@ -52,7 +52,7 @@ function Kafka() {
     // Poll every 2 seconds for tail mode
     intervalRef.current = setInterval(async () => {
       try {
-        const response = await axios.post('http://localhost:3001/api/kafka', {
+        const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/kafka`, {
           ...config,
           mode: 'tail'
         });
