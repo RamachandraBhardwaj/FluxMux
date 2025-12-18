@@ -4,6 +4,7 @@ const { exec } = require('child_process');
 const fs = require('fs').promises;
 const path = require('path');
 const os = require('os');
+const multer = require('multer');
 
 const app = express();
 const PORT = 3001;
@@ -14,6 +15,13 @@ app.use(express.json({ limit: '50mb' }));
 // Path to FluxMux CLI binary
 const FLUXMUX_CLI = path.join(__dirname, '../target/release/fluxmux-cli');
 const TEMP_DIR = os.tmpdir();
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, TEMP_DIR),
+  filename: (req, file, cb) => cb(null, `${Date.now()}_${file.originalname}`)
+});
+const upload = multer({ storage });
 
 // Utility function to execute commands
 const executeCommand = (command) => {
@@ -72,65 +80,102 @@ app.post('/api/convert', async (req, res) => {
   }
 });
 
-// Bridge endpoint
-app.post('/api/bridge', async (req, res) => {
+// Bridge endpoint with file upload support
+const bridgeUpload = upload.fields([
+  { name: 'sourceFile', maxCount: 1 },
+  { name: 'schemaFile', maxCount: 1 }
+]);
+
+app.post('/api/bridge', bridgeUpload, async (req, res) => {
+  let sourceFilePath = null;
+  let schemaFilePath = null;
+
   try {
     const {
-      source,
       sink,
       batchSize,
       batchTimeoutMs,
       deduplicate,
-      throttlePerSec,
+      throttleRate,
       retryMaxAttempts,
-      retryDelayMs,
-      schemaPath
+      retryDelayMs
     } = req.body;
 
-    if (!source || !sink) {
-      return res.status(400).json({ error: 'Source and sink are required' });
+    // Get uploaded files
+    sourceFilePath = req.files?.sourceFile?.[0]?.path;
+    schemaFilePath = req.files?.schemaFile?.[0]?.path;
+
+    if (!sourceFilePath || !sink) {
+      return res.status(400).json({ error: 'Source file and sink are required' });
     }
 
-    // Build command
-    let command = `${FLUXMUX_CLI} bridge --source "${source}" --sink "${sink}"`;
-    
+    // Build command using uploaded file path
+    let command = `${FLUXMUX_CLI} bridge --source "file:${sourceFilePath}" --sink "${sink}"`;
+
     if (batchSize) command += ` --batch-size ${batchSize}`;
     if (batchTimeoutMs) command += ` --batch-timeout-ms ${batchTimeoutMs}`;
-    if (deduplicate) command += ` --deduplicate`;
-    if (throttlePerSec) command += ` --throttle-per-sec ${throttlePerSec}`;
+    if (deduplicate === 'true' || deduplicate === true) command += ` --deduplicate`;
+    if (throttleRate) command += ` --throttle-rate ${throttleRate}`;
     if (retryMaxAttempts) command += ` --retry-max-attempts ${retryMaxAttempts}`;
     if (retryDelayMs) command += ` --retry-delay-ms ${retryDelayMs}`;
-    if (schemaPath) command += ` --schema-path ${schemaPath}`;
+    if (schemaFilePath) command += ` --schema-path "${schemaFilePath}"`;
 
     const result = await executeCommand(command);
-    res.json({ 
-      success: true, 
-      output: result.stdout || 'Bridge completed successfully' 
+
+    // Cleanup uploaded files
+    if (sourceFilePath) await fs.unlink(sourceFilePath).catch(() => {});
+    if (schemaFilePath) await fs.unlink(schemaFilePath).catch(() => {});
+
+    res.json({
+      success: true,
+      output: result.stdout || 'Bridge completed successfully'
     });
   } catch (error) {
-    res.status(500).json({ 
-      error: error.stderr || error.error || error.message || 'Bridge operation failed' 
+    // Cleanup on error
+    if (sourceFilePath) await fs.unlink(sourceFilePath).catch(() => {});
+    if (schemaFilePath) await fs.unlink(schemaFilePath).catch(() => {});
+
+    res.status(500).json({
+      error: error.stderr || error.error || error.message || 'Bridge operation failed'
     });
   }
 });
 
-// Pipe endpoint
-app.post('/api/pipe', async (req, res) => {
-  try {
-    const { source, actions, sinks } = req.body;
+// Pipe endpoint with file upload support
+const pipeUpload = upload.single('sourceFile');
 
-    if (!source) {
-      return res.status(400).json({ error: 'Source is required' });
+app.post('/api/pipe', pipeUpload, async (req, res) => {
+  let sourceFilePath = null;
+
+  try {
+    // Get uploaded file
+    sourceFilePath = req.file?.path;
+
+    // Parse JSON strings from form data
+    const actions = req.body.actions ? JSON.parse(req.body.actions) : [];
+    const sinks = req.body.sinks ? JSON.parse(req.body.sinks) : ['stdout'];
+
+    if (!sourceFilePath) {
+      return res.status(400).json({ error: 'Source file is required' });
     }
 
-    // Build command
-    let command = `${FLUXMUX_CLI} pipe "${source}"`;
+    // Build command using uploaded file path
+    let command = `${FLUXMUX_CLI} pipe "file:${sourceFilePath}"`;
 
     // Add actions
     if (actions && actions.length > 0) {
       for (const action of actions) {
         command += ` ${action.type}`;
-        if (action.param) {
+
+        // Handle aggregate options
+        if (action.type === 'aggregate') {
+          if (action.groupBy) command += ` --group-by ${action.groupBy}`;
+          if (action.avg) command += ` --avg ${action.avg}`;
+          if (action.sum) command += ` --sum ${action.sum}`;
+          if (action.min) command += ` --min ${action.min}`;
+          if (action.max) command += ` --max ${action.max}`;
+          if (action.count) command += ` --count`;
+        } else if (action.param) {
           command += ` '${action.param}'`;
         }
       }
@@ -147,13 +192,20 @@ app.post('/api/pipe', async (req, res) => {
     }
 
     const result = await executeCommand(command);
-    res.json({ 
-      success: true, 
-      output: result.stdout || 'Pipe completed successfully' 
+
+    // Cleanup uploaded file
+    if (sourceFilePath) await fs.unlink(sourceFilePath).catch(() => {});
+
+    res.json({
+      success: true,
+      output: result.stdout || 'Pipe completed successfully'
     });
   } catch (error) {
-    res.status(500).json({ 
-      error: error.stderr || error.error || error.message || 'Pipe operation failed' 
+    // Cleanup on error
+    if (sourceFilePath) await fs.unlink(sourceFilePath).catch(() => {});
+
+    res.status(500).json({
+      error: error.stderr || error.error || error.message || 'Pipe operation failed'
     });
   }
 });
